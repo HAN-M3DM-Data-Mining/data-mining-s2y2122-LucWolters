@@ -1,0 +1,134 @@
+---
+title: "Assigment - kNN DIY"
+author:
+  - name Ernst Hardeman
+  - name Luc Wolters (reviewer)
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+   html_notebook:
+    toc: true
+    toc_depth: 2
+---
+
+
+```{r}
+library(tidyverse)
+library(googlesheets4)
+library(class)
+library(caret)
+```
+
+
+## Business Understanding
+understanding if there is an human in the house based on temperature, humidity, light, C02 and humidity ratio.  
+
+
+## Data Understanding
+
+### Upload data
+```{r}
+url <- "https://raw.githubusercontent.com/HAN-M3DM-Data-Mining/assignments/master/datasets/KNN-occupancy.csv"
+rawDF <- KNN_occupancy
+```
+
+### Using the str() function we can have some basic information about the dataset.
+
+```{r}
+str(KNN_occupancy)
+```
+there are 7 columns (variables) and 8143 rows (observations)
+
+```{r}
+RawDF <- KNN_occupancy
+```
+
+
+## Data Preparation
+
+### Remove irrelevent data
+```{r}
+cleanDF <- KNN_occupancy[-1]
+head(cleanDF)
+```
+
+### Choose label
+```{r}
+cntOccupancy <- table(cleanDF$Occupancy)
+propOccupancy <- round(prop.table(cntOccupancy) * 100 , digits = 1)
+
+cntOccupancy
+```
+```{r}
+propOccupancy
+```
+
+### The variable is now coded as a type character. Many models require that the label is of type factor. This is easily solved using the factor() function.
+
+```{r}
+cleanDF$Occupancy <- factor(cleanDF$Occupancy, levels = c("0", "1"), labels = c("No", "Yes"))  %>% relevel("Yes")
+head(cleanDF, 10)
+```
+
+
+```{r}
+summary(cleanDF[c("Temperature", "Humidity", "Light", "HumidityRatio")])
+```
+
+### To normalise the ranges we will write our own normalization function.
+
+```{r}
+normalize <- function(x) { # Function takes in a vector
+  return ((x - min(x)) / (max(x) - min(x))) # distance of item value - minimum vector value divided by the range of all vector values
+}
+
+testSet1 <- c(1:5)
+testSet2 <- c(1:5) * 10
+
+cat("testSet1:", testSet1, "\n")
+```
+```{r}
+cat("testSet2:", testSet2, "\n")
+cat("Normalized testSet1:", normalize(testSet1), "\n")
+cat("Normalized testSet2:", normalize(testSet2))
+```
+```{r}
+nCols <- dim(cleanDF)[2]
+cleanDF_n <- sapply(2:nCols-1,
+                    function(x) {  normalize(cleanDF[,x])
+}) %>% as.data.frame()
+
+summary(cleanDF_n)
+```
+```{r}
+trainDF_feat <- cleanDF_n[1:6000,  ]
+testDF_feat <- cleanDF_n[6001:8143,  ]
+```
+
+
+### We can now split our data into training and test sets.
+```{r}
+trainDF_labels <- cleanDF[1:6000,  6]
+testDF_labels <- cleanDF[6001:8143,  6]
+```
+
+
+## Modeling
+
+### To train the knn model we only need one single function from the class package. It takes the set with training features and the set with training label. The trained model is applied to the set with test features and the function gives back a set of predictions.
+ 
+
+```{r}
+cleanDF_test_pred <- knn(train = as.matrix(trainDF_feat), test = as.matrix(testDF_feat), cl = as.matrix(trainDF_labels), k = 21)
+head(cleanDF_test_pred)
+```
+
+### Here is our own table:
+```{r}
+confusionMatrix(cleanDF_test_pred, testDF_labels[[1]], positive = NULL, dnn = c("Prediction", "True"))
+```
+## Evaluation and Deployment
+
+## Added -1 to the nCols function. By adding the -1, the first data and goes direct to the numbers.
+
+
+
