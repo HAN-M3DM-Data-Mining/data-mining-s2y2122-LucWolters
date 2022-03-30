@@ -129,6 +129,6 @@ confusionMatrix(cleanDF_test_pred, testDF_labels[[1]], positive = NULL, dnn = c(
 ## Evaluation and Deployment
 
 ## Added -1 to the nCols function. By adding the -1, the first data and goes direct to the numbers.
-
+## This is the only fault in the script. The code is fully running now
 
 
